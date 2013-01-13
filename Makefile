@@ -2,8 +2,6 @@
 #  MAKEFILE
 #-------------------------------------------------------------------------------  
 #
-#  CVS: $Revision: 1.14 $ $Date: 2012/04/03 07:51:21 $
-#
 #  (C) James Wookey
 #  Department of Earth Sciences, University of Bristol
 #  Wills Memorial Building, Queen's Road, Bristol, BR8 1RJ, UK
@@ -11,7 +9,7 @@
 #
 #-------------------------------------------------------------------------------
 #
-#   Makefile for building sacio90
+#   Makefile for building sacio90 test program.
 #
 #-------------------------------------------------------------------------------
 #
@@ -24,23 +22,16 @@
 SACIO90 = sacio90.o
 
 #-------------------------------------------------------------------------------
-# Uncomment to use Intel Compilers (v8+) 
-#FC = ifort
-#CC = icc
-#CFLAGS = -O2
-#FFLAGS = -O2 -assume byterecl
-#-------------------------------------------------------------------------------
-# Uncomment to use Gnu Compilers 
+# Gnu Compilers 
 FC = /usr/local/bin/gfortran
 CC = /usr/local/bin/gcc
 CFLAGS = -O2
 FFLAGS = -O2
+
 #-------------------------------------------------------------------------------
-# Uncomment to use g95
-#FC = /opt/local/bin/g95
-#CC = gcc
-#CFLAGS = -O2
-#FFLAGS = -O2 -fno-second-underscore
+# Uncomment if your version sacio does not have the RSACH subroutine.  
+#SACIO90_FLAGS += -DNORSACH
+#-------------------------------------------------------------------------------
 
 all:test_sacio90
 

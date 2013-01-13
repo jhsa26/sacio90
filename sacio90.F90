@@ -7,9 +7,9 @@
 !===============================================================================
 !
 !  PROGRAM : sacio90
-!  VERSION : 1.0
+!  VERSION : 0.1
 !
-!  (C) James Wookey
+!  (C) James Wookey, 2013
 !  Department of Earth Sciences, University of Bristol
 !  Wills Memorial Building, Queen's Road, Bristol, BR8 1RJ, UK
 !  j.wookey@bristol.ac.uk
@@ -17,20 +17,17 @@
 !-------------------------------------------------------------------------------
 !
 !   The module provides data structures and functions for reading,
-!   writing and SAC files in Fortran 90/95. It consists of a wrapper around 
+!   writing SAC files in Fortran 90/95. It consists of a wrapper around 
 !   calls to the distributed sacio library. 
 !
-!   Please report bugs/problems to email address above
-!
-!   NOTE: This version of the code assumes IO filestream 99 is available 
-!         for reading and writing. 
+!   Please report bugs/problems to email address above.
 !
 !-------------------------------------------------------------------------------
 !
 !  This software is distributed under the term of the BSD free software license.
 !
 !  Copyright:
-!     (c) 2003-2011, James Wookey
+!     (c) 2003-2013, James Wookey
 !
 !  All rights reserved.
 !
@@ -62,12 +59,6 @@
 !   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 !   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 !
-!-------------------------------------------------------------------------------
-!     Changes log
-!-------------------------------------------------------------------------------
-!
-!     2013-01-11  v0.1   * Incept date
-!
 !===============================================================================
 
    module sacio90 ! Utility module for F90/95 for SAC files
@@ -92,22 +83,7 @@
       integer, parameter, private :: int4 = selected_int_kind(9) ;
       integer, parameter, private :: real4 = selected_real_kind(6,37) ;
       integer, parameter, private :: real8 = selected_real_kind(15,307) ; 
-
       
-!  ** define the unit number to use for reading and writing (opened and closed
-!  ** within each call)
-      integer, parameter :: sacio90_iounit = 99 ;
-
-!  ** OPTIONAL suppression of warnings, set to 1 to supress      
-#ifdef SUPPRESS_WARNINGS
-      integer, parameter :: sacio90_suppress_warnings = 1
-#else      
-      integer, parameter :: sacio90_suppress_warnings = 0 
-#endif      
-
-!  ** noise generator seed value
-      integer, private :: sacio90_random_seed ;      
-
 !  ** standard filename length
       integer, parameter :: sacio90_fnlength = 256 ;      
 
@@ -144,7 +120,6 @@
          character (len = 8) :: kcmpnm,knetwk,kdatrd,kinst
 !     ** the trace
          real(real4), allocatable :: y(:)
-                  
       end type SAC1
 
 !=============================================================================== 
@@ -202,59 +177,126 @@
    subroutine sacio90_delete(tr)
 !===============================================================================
 !
-!     Delete a trace: null out headers and deallocate the memory
+!     Delete a trace tr: null out headers and deallocate the trace memory
 !
       implicit none
       type (SAC1) :: tr
 
-tr%delta     = 0.0       ; tr%resp3     = SAC_rnull ; tr%user8     = SAC_rnull
-tr%depmin    = SAC_rnull ; tr%resp4     = SAC_rnull ; tr%user9     = SAC_rnull
-tr%depmax    = SAC_rnull ; tr%resp5     = SAC_rnull ; tr%dist      = SAC_rnull
-tr%scale     = SAC_rnull ; tr%resp6     = SAC_rnull ; tr%az        = SAC_rnull
-tr%odelta    = SAC_rnull ; tr%resp7     = SAC_rnull ; tr%baz       = SAC_rnull
-tr%b         = 0.0       ; tr%resp8     = SAC_rnull ; tr%gcarc     = SAC_rnull
-tr%e         = 0.0       ; tr%resp9     = SAC_rnull ; 
-tr%o         = SAC_rnull ; tr%stla      = SAC_rnull ; 
-tr%a         = SAC_rnull ; tr%stlo      = SAC_rnull ; tr%depmen    = SAC_rnull
-                           tr%stel      = SAC_rnull ; tr%cmpaz     = SAC_rnull
-tr%t0        = SAC_rnull ; tr%stdp      = SAC_rnull ; tr%cmpinc    = SAC_rnull
-tr%t1        = SAC_rnull ; tr%evla      = SAC_rnull ; tr%xminimum  = SAC_rnull
-tr%t2        = SAC_rnull ; tr%evlo      = SAC_rnull ; tr%xmaximum  = SAC_rnull
-tr%t3        = SAC_rnull ; tr%evel      = SAC_rnull ; tr%yminimum  = SAC_rnull
-tr%t4        = SAC_rnull ; tr%evdp      = SAC_rnull ; tr%ymaximum  = SAC_rnull
-tr%t5        = SAC_rnull ; tr%mag       = SAC_rnull ; 
-tr%t6        = SAC_rnull ; tr%user0     = SAC_rnull ; 
-tr%t7        = SAC_rnull ; tr%user1     = SAC_rnull ; 
-tr%t8        = SAC_rnull ; tr%user2     = SAC_rnull ; 
-tr%t9        = SAC_rnull ; tr%user3     = SAC_rnull ; 
-tr%f         = SAC_rnull ; tr%user4     = SAC_rnull ; 
-tr%resp0     = SAC_rnull ; tr%user5     = SAC_rnull ; 
-tr%resp1     = SAC_rnull ; tr%user6     = SAC_rnull ; 
-tr%resp2     = SAC_rnull ; tr%user7     = SAC_rnull ; 
-                           
-tr%nzyear    = SAC_inull ; tr%unused8   = SAC_inull ; 
-tr%nzjday    = SAC_inull ; tr%iftype    = 1         ; 
-tr%nzhour    = SAC_inull ; tr%idep      = 5         ; 
-tr%nzmin     = SAC_inull ; tr%iztype    = 9         ; 
-tr%nzsec     = SAC_inull ; tr%unused9   = SAC_inull ; 
-tr%nzmsec    = SAC_inull ; tr%iinst     = SAC_inull ; 
-tr%nvhdr     = 6         ; tr%istreg    = SAC_inull ; 
-tr%norid     = SAC_inull ; tr%ievreg    = SAC_inull ; tr%leven     = 1   
-tr%nevid     = SAC_inull ; tr%ievtyp    = 5         ; tr%lpspol    = 0
-tr%npts      = 0         ; tr%iqual     = SAC_inull ; tr%lovrok    = 1
-                           tr%isynth    = SAC_inull ; tr%lcalda    = 1
-tr%nwfid     = SAC_inull ; tr%imagtyp   = SAC_inull ; 
-tr%nxsize    = SAC_inull ; tr%imagsrc   = SAC_inull
-tr%nysize    = SAC_inull ; 
-
-tr%kstnm = SAC_cnull ; tr%kt3 = SAC_cnull ; tr%kuser0  = SAC_cnull
-tr%kevnm = SAC_cnull ; tr%kt4 = SAC_cnull ; tr%kuser1  = SAC_cnull
-tr%khole = SAC_cnull ; tr%kt5 = SAC_cnull ; tr%kuser2  = SAC_cnull
-tr%ko    = SAC_cnull ; tr%kt6 = SAC_cnull ; tr%kcmpnm  = SAC_cnull
-tr%ka    = SAC_cnull ; tr%kt7 = SAC_cnull ; tr%knetwk  = SAC_cnull
-tr%kt0   = SAC_cnull ; tr%kt8 = SAC_cnull ; tr%kdatrd  = SAC_cnull
-tr%kt1   = SAC_cnull ; tr%kt9 = SAC_cnull ; tr%kinst   = SAC_cnull
-tr%kt2   = SAC_cnull ; tr%kf  = SAC_cnull ; 
+      tr%delta     = 0.0        
+      tr%depmin    = SAC_rnull  
+      tr%depmax    = SAC_rnull  
+      tr%scale     = SAC_rnull  
+      tr%odelta    = SAC_rnull  
+      tr%b         = 0.0        
+      tr%e         = 0.0        
+      tr%o         = SAC_rnull  
+      tr%a         = SAC_rnull  
+      tr%t0        = SAC_rnull  
+      tr%t1        = SAC_rnull  
+      tr%t2        = SAC_rnull  
+      tr%t3        = SAC_rnull  
+      tr%t4        = SAC_rnull  
+      tr%t5        = SAC_rnull  
+      tr%t6        = SAC_rnull  
+      tr%t7        = SAC_rnull  
+      tr%t8        = SAC_rnull  
+      tr%t9        = SAC_rnull  
+      tr%f         = SAC_rnull  
+      tr%resp0     = SAC_rnull  
+      tr%resp1     = SAC_rnull  
+      tr%resp2     = SAC_rnull  
+      tr%resp3     = SAC_rnull  
+      tr%resp4     = SAC_rnull  
+      tr%resp5     = SAC_rnull  
+      tr%resp6     = SAC_rnull  
+      tr%resp7     = SAC_rnull  
+      tr%resp8     = SAC_rnull  
+      tr%resp9     = SAC_rnull  
+      tr%stla      = SAC_rnull  
+      tr%stlo      = SAC_rnull  
+      tr%stel      = SAC_rnull  
+      tr%stdp      = SAC_rnull  
+      tr%evla      = SAC_rnull  
+      tr%evlo      = SAC_rnull  
+      tr%evel      = SAC_rnull  
+      tr%evdp      = SAC_rnull  
+      tr%mag       = SAC_rnull  
+      tr%user0     = SAC_rnull  
+      tr%user1     = SAC_rnull  
+      tr%user2     = SAC_rnull  
+      tr%user3     = SAC_rnull  
+      tr%user4     = SAC_rnull  
+      tr%user5     = SAC_rnull  
+      tr%user6     = SAC_rnull  
+      tr%user7     = SAC_rnull  
+      tr%user8     = SAC_rnull
+      tr%user9     = SAC_rnull
+      tr%dist      = SAC_rnull
+      tr%az        = SAC_rnull
+      tr%baz       = SAC_rnull
+      tr%gcarc     = SAC_rnull
+      tr%depmen    = SAC_rnull
+      tr%cmpaz     = SAC_rnull
+      tr%cmpinc    = SAC_rnull
+      tr%xminimum  = SAC_rnull
+      tr%xmaximum  = SAC_rnull
+      tr%yminimum  = SAC_rnull
+      tr%ymaximum  = SAC_rnull
+      
+      tr%nzyear    = SAC_inull
+      tr%nzjday    = SAC_inull
+      tr%nzhour    = SAC_inull
+      tr%nzmin     = SAC_inull
+      tr%nzsec     = SAC_inull
+      tr%nzmsec    = SAC_inull
+      tr%nvhdr     = 6        
+      tr%norid     = SAC_inull 
+      tr%nevid     = SAC_inull
+      tr%npts      = 0        
+      tr%nwfid     = SAC_inull
+      tr%nxsize    = SAC_inull
+      tr%nysize    = SAC_inull
+      tr%unused8   = SAC_inull
+      tr%iftype    = 1        
+      tr%idep      = 5        
+      tr%iztype    = 9        
+      tr%unused9   = SAC_inull
+      tr%iinst     = SAC_inull
+      tr%istreg    = SAC_inull
+      tr%ievreg    = SAC_inull
+      tr%ievtyp    = 5        
+      tr%iqual     = SAC_inull
+      tr%isynth    = SAC_inull
+      tr%imagtyp   = SAC_inull
+      tr%imagsrc   = SAC_inull
+      tr%leven     = 1 
+      tr%lpspol    = 0
+      tr%lovrok    = 1
+      tr%lcalda    = 1
+      
+      tr%kstnm = SAC_cnull  
+      tr%kevnm = SAC_cnull  
+      tr%khole = SAC_cnull  
+      tr%ko    = SAC_cnull  
+      tr%ka    = SAC_cnull  
+      tr%kt0   = SAC_cnull  
+      tr%kt1   = SAC_cnull  
+      tr%kt2   = SAC_cnull  
+      tr%kt3 = SAC_cnull     
+      tr%kt4 = SAC_cnull     
+      tr%kt5 = SAC_cnull     
+      tr%kt6 = SAC_cnull     
+      tr%kt7 = SAC_cnull     
+      tr%kt8 = SAC_cnull     
+      tr%kt9 = SAC_cnull     
+      tr%kf  = SAC_cnull      
+      tr%kuser0  = SAC_cnull       
+      tr%kuser1  = SAC_cnull       
+      tr%kuser2  = SAC_cnull       
+      tr%kcmpnm  = SAC_cnull       
+      tr%knetwk  = SAC_cnull       
+      tr%kdatrd  = SAC_cnull       
+      tr%kinst   = SAC_cnull       
       
       if (allocated(tr%y)) then
          deallocate(tr%y)
@@ -391,7 +433,6 @@ tr%kt2   = SAC_cnull ; tr%kf  = SAC_cnull ;
       call sacio90_malloc(tr%y,tr%npts)
    
       tr % y(1:tr % npts) = 0.0
-      
 
    end subroutine sacio90_new
 !===============================================================================
@@ -400,8 +441,9 @@ tr%kt2   = SAC_cnull ; tr%kf  = SAC_cnull ;
    subroutine sacio90_malloc(x,n)
 !===============================================================================
 !
-!     Allocate memory to an array, if required
+!     Allocate memory to an array, if required. This 
 !
+
       implicit none
       real(real4),allocatable :: x(:)
       integer :: n
@@ -445,12 +487,9 @@ tr%kt2   = SAC_cnull ; tr%kf  = SAC_cnull ;
 !===============================================================================
    subroutine sacio90_copyhdr(source,dest)
 !===============================================================================
-! input: source   SACtrace    source SAC trace object
-! output:dest      SACTrace    destination SAC trace object
-!-------------------------------------------------------------------------------
-!  modifications:
-!     24-03-03    J. Wookey      Modified to use F90 constructs
-!-------------------------------------------------------------------------------
+!  copy all the header variables from SAC structure source to SAC structure
+!  dest.
+!
       implicit none
       type (SAC1) :: source,dest
 
@@ -708,6 +747,78 @@ tr%kt2   = SAC_cnull ; tr%kf  = SAC_cnull ;
 !===============================================================================
 
 !===============================================================================
+    subroutine sacio90_gfu(lu)  
+!
+!     sacio90_gfu returns a unit number that is not in use
+!
+      integer*4 lu_max, lu, m, iostat
+      logical opened
+!
+      do lu = 99,1,-1
+         inquire (unit=lu, opened=opened, iostat=iostat)
+         if (iostat.ne.0) cycle
+         if (.not.opened) exit
+      end do
+      
+      return 
+   end subroutine sacio90_gfu
+!===============================================================================
+
+#ifdef NORSACH
+
+!===============================================================================
+   subroutine sacio90_getnpts(fname, npts)
+!===============================================================================
+!
+!  read a SAC time-series object from a file, using the SACIO library.
+!
+   implicit none
+      character (len=*) :: fname
+      integer :: npts, lu, sach(80), nvhdr, itmp,itmp2
+      
+      open(newunit=lu, file=trim(fname), form='unformatted', &
+                  access='direct',recl=4, status='old',err=900)
+                  
+      read(lu,rec=77,err=901) nvhdr            
+      read(lu,rec=80,err=901) npts
+      
+!  ** if nvhdr is not 6, then try byteswapping. 
+      if (nvhdr /= 6) then 
+         itmp = nvhdr
+         call mvbits( itmp, 24, 8, itmp2, 0  )
+         call mvbits( itmp, 16, 8, itmp2, 8  )
+         call mvbits( itmp,  8, 8, itmp2, 16 )
+         call mvbits( itmp,  0, 8, itmp2, 24 )
+         nvhdr = itmp2
+      endif
+
+!  ** if nvhdr is still not 6 crash out, otherwise byteswap npts
+      if (nvhdr /= 6) then 
+         write(0,'(a,a)') &
+         'SACIO90: Error: File does not have a header compatible with library: ',&
+            trim(fname)
+         else
+            itmp = npts
+            call mvbits( itmp, 24, 8, itmp2, 0  )
+            call mvbits( itmp, 16, 8, itmp2, 8  )
+            call mvbits( itmp,  8, 8, itmp2, 16 )
+            call mvbits( itmp,  0, 8, itmp2, 24 )
+            npts = itmp2
+      endif
+                  
+      close(lu)
+      
+      return
+900   write(0,'(a,a)') 'SACIO90: Error: File does not exist: ',trim(fname)
+      stop
+901   write(0,'(a,a)') 'SACIO90: Error: Bad read in file: ', trim(fname)
+      stop               
+   end subroutine sacio90_getnpts
+!===============================================================================
+
+#endif
+
+!===============================================================================
    subroutine sacio90_read(fname, tr)
 !===============================================================================
 !
@@ -715,14 +826,21 @@ tr%kt2   = SAC_cnull ; tr%kf  = SAC_cnull ;
 !
    implicit none
       character (len=*) :: fname
-      integer :: i, istatus, ndummy, npts, nerr
+      integer :: npts, nerr
       real :: rdummy,beg,delta
       
       type (SAC1) :: tr
       
+
+!  ** If sacio library has rsach, use that to detemine the filesize, otherwise
+!     use the function sacio90_getnpts()      
+#ifdef NORSACH
+      call sacio90_getnpts(fname, npts)
+#else      
 !  ** read in the file header, and get the number of points
-      call rsac1(fname,rdummy,ndummy,beg,delta,0,nerr)
+      call rsach(fname,nerr)
       call getnhv('NPTS',npts,nerr)
+#endif
 
 !  ** build a new trace
       call sacio90_new(npts,delta,tr)
@@ -845,7 +963,7 @@ tr%kt2   = SAC_cnull ; tr%kf  = SAC_cnull ;
       call getkhv('kdatrd',tr%kdatrd(1:8),nerr)
       call getkhv('kinst',tr%kinst(1:8),nerr)            
       
-!  ** handle error
+!  ** handle errors
 
    end subroutine sacio90_read
 !===============================================================================
